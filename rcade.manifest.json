@@ -1,0 +1,18 @@
+{
+  "$schema": "https://rcade.dev/manifest.schema.json",
+  "name": "street-philosophy-fighter",
+  "display_name": "Street Philosophy Fighter",
+  "description": "The Ultimate Battle of Ideas",
+  "visibility": "public",
+  "authors": [
+    {
+      "display_name": "Douglas Lerner"
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "@rcade/input-classic",
+      "version": "1.0.0"
+    }
+  ]
+}
