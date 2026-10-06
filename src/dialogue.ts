@@ -1,33 +1,284 @@
-export type Topic = 'desire' | 'self' | 'reality' | 'freedom' | 'reason' | 'creation';
-export type FighterId = 'buddha' | 'rand';
-export type MoveId = 'cause' | 'aggregates' | 'mindful' | 'release' | 'identity' | 'achievement' | 'premises' | 'rights';
-export interface Move { id: MoveId; name: string; topic: Topic; kind: 'offense' | 'defense'; lines: string[]; replies: Partial<Record<Topic, string[]>> }
+export type Topic =
+  | "desire"
+  | "self"
+  | "reality"
+  | "freedom"
+  | "reason"
+  | "creation";
+export type FighterId = "buddha" | "rand";
+export type MoveId =
+  | "cause"
+  | "aggregates"
+  | "mindful"
+  | "release"
+  | "identity"
+  | "achievement"
+  | "premises"
+  | "rights";
+export interface Move {
+  id: MoveId;
+  name: string;
+  topic: Topic;
+  kind: "offense" | "defense";
+  lines: string[];
+  replies: Partial<Record<Topic, string[]>>;
+}
 export const MOVES: Record<MoveId, Move> = {
- cause: { id:'cause', name:'Cause of Suffering', topic:'desire', kind:'offense', lines:['Your craving for victory is already making you suffer.','You fight the loss you fear before it has happened.','Notice the wanting that drives your next blow.','Peace cannot depend on winning this contest.','Every grasping victory prepares another hunger.'], replies:{creation:['Create, then. Why bind your peace to possessing it?','The work is not your bondage. Your craving for its reward is.'],freedom:['How free are you when wanting commands your every move?','You defend your liberty. Can you also release your craving?'],reason:['Reason can serve a craving without freeing you from it.','Even a sound argument can become something you cling to.'],reality:['A thing may be real. Your craving for it still brings suffering.','I question your attachment, not the presence of the world.']} },
- aggregates: {id:'aggregates',name:'Five-Aggregate Breakdown',topic:'self',kind:'offense',lines:['Which of these changing parts do you call yourself?','Observe the body, the feeling, the thought. Where is their owner?','What you call yourself arises through changing conditions.','These parts gather. These parts pass away.','You defend a fixed self in a world of changing processes.'],replies:{self:['The self you defend is precisely what we must examine.','Which changing part is the sovereign you speak of?'],creation:['Your creation is real. Does that make its creator unchanging?','The maker, too, depends on conditions.'],reality:['Identity does not establish a permanent, independent self.','A changing person need not conceal an eternal owner.'],freedom:['Before defending the owner, examine what you call yours.']} },
- mindful:{id:'mindful',name:'Mindful Concentration',topic:'reason',kind:'defense',lines:['I see the impulse before it becomes the blow.','An impulse observed need not be obeyed.','Attention leaves room for another response.','I meet this moment without rushing beyond it.','First see clearly. Then act.'],replies:{reason:['Then examine the impulse as carefully as the premise.','Clear thought begins with noticing what the mind is doing.'],creation:['Act with care, without being carried away by wanting.'],desire:['I can observe this desire without following it.'],reality:['Then attend to what is happening here, now.']} },
- release:{id:'release',name:'Extinguish Clinging',topic:'freedom',kind:'defense',lines:['I need not hold on to what you threaten.','Letting go gives your threat nothing to seize.','I release the need to possess this moment.','What passes need not carry my peace away.','I can act without clinging to the outcome.'],replies:{self:['You claim possession. I release the need to possess.','A defended identity can become another attachment.'],creation:['I can value the work without making it my refuge.','Letting go is not a refusal to act.'],freedom:['You guard a boundary. I loosen an attachment.','Freedom also asks what commands us from within.'],reality:['Letting go does not require denying that things exist.']} },
- identity:{id:'identity',name:'A Is A',topic:'reality',kind:'offense',lines:['Your wishes cannot make a contradiction real.','Reality does not yield to a convenient belief.','A thing is what it is. Face its nature.','Calling it an illusion will not resolve the contradiction.','Existence does not wait for your permission.'],replies:{self:['Change has an identity too. It does not erase the person acting.','A changing individual is still a real individual.'],freedom:['Letting go does not make the thing you built unreal.','Release your attachment. Reality still requires an answer.'],reason:['Attention is useful when it attends to facts.'],desire:['Desire cannot replace facts. Neither can renouncing it.']} },
- achievement:{id:'achievement',name:'Productive Achievement',topic:'creation',kind:'offense',lines:['Value must be created through thought and action.','A purpose gives effort its direction.','The world I want requires the work I choose.','Achievement begins where wishing ends.','I intend to build, not merely to endure.'],replies:{desire:['You mistake purposeful ambition for helpless craving.','A chosen purpose need not make a person its slave.'],freedom:['Then let us see what your freedom chooses to create.','I exercise my freedom through purposeful action.'],self:['The individual you dissolve is the one who must do the work.'],reason:['Clear attention should lead to purposeful action.']} },
- premises:{id:'premises',name:'Check Your Premises',topic:'reason',kind:'defense',lines:['Your conclusion fails where your premise contradicts reality.','What evidence supports the assumption you are making?','A contradiction is a reason to check your premises.','Trace your claim back to the facts.','Your confidence cannot repair a faulty premise.'],replies:{self:['Dependence on conditions does not prove an individual unreal.','You assume that only the unchanging can be an individual.'],desire:['You treat every ambition as though it were compulsive craving.','Distinguish a rational goal from a desire without grounds.'],freedom:['Does letting go answer the claim, or merely leave it?'],reason:['Let observation test the premise, then.']} },
- rights:{id:'rights',name:'Individual Rights',topic:'self',kind:'defense',lines:['Your need gives you no claim to rule my life.','My life is not yours to dispose of.','I choose my purpose. You do not choose it for me.','An individual is an end, not your instrument.','Your conviction gives you no right to compel me.'],replies:{self:['A person need not be eternal to have rights.','Your account of the self does not authorize coercion.'],desire:['Criticize my ambition. You still cannot command my life.'],freedom:['Then respect my freedom to choose a different path.','Your release is your choice. My purpose is mine.'],creation:['The work of my life is not yours to claim.']} }
+  cause: {
+    id: "cause",
+    name: "Cause of Suffering",
+    topic: "desire",
+    kind: "offense",
+    lines: [
+      "Your craving for victory is already making you suffer.",
+      "You fight the loss you fear before it has happened.",
+      "Notice the wanting that drives your next blow.",
+      "Peace cannot depend on winning this contest.",
+      "Every grasping victory prepares another hunger.",
+    ],
+    replies: {
+      creation: [
+        "Create, then. Why bind your peace to possessing it?",
+        "The work is not your bondage. Your craving for its reward is.",
+      ],
+      freedom: [
+        "How free are you when wanting commands your every move?",
+        "You defend your liberty. Can you also release your craving?",
+      ],
+      reason: [
+        "Reason can serve a craving without freeing you from it.",
+        "Even a sound argument can become something you cling to.",
+      ],
+      reality: [
+        "A thing may be real. Your craving for it still brings suffering.",
+        "I question your attachment, not the presence of the world.",
+      ],
+    },
+  },
+  aggregates: {
+    id: "aggregates",
+    name: "Five-Aggregate Breakdown",
+    topic: "self",
+    kind: "offense",
+    lines: [
+      "Which of these changing parts do you call yourself?",
+      "Observe the body, the feeling, the thought. Where is their owner?",
+      "What you call yourself arises through changing conditions.",
+      "These parts gather. These parts pass away.",
+      "You defend a fixed self in a world of changing processes.",
+    ],
+    replies: {
+      self: [
+        "The self you defend is precisely what we must examine.",
+        "Which changing part is the sovereign you speak of?",
+      ],
+      creation: [
+        "Your creation is real. Does that make its creator unchanging?",
+        "The maker, too, depends on conditions.",
+      ],
+      reality: [
+        "Identity does not establish a permanent, independent self.",
+        "A changing person need not conceal an eternal owner.",
+      ],
+      freedom: ["Before defending the owner, examine what you call yours."],
+    },
+  },
+  mindful: {
+    id: "mindful",
+    name: "Mindful Concentration",
+    topic: "reason",
+    kind: "defense",
+    lines: [
+      "I see the impulse before it becomes the blow.",
+      "An impulse observed need not be obeyed.",
+      "Attention leaves room for another response.",
+      "I meet this moment without rushing beyond it.",
+      "First see clearly. Then act.",
+    ],
+    replies: {
+      reason: [
+        "Then examine the impulse as carefully as the premise.",
+        "Clear thought begins with noticing what the mind is doing.",
+      ],
+      creation: ["Act with care, without being carried away by wanting."],
+      desire: ["I can observe this desire without following it."],
+      reality: ["Then attend to what is happening here, now."],
+    },
+  },
+  release: {
+    id: "release",
+    name: "Extinguish Clinging",
+    topic: "freedom",
+    kind: "defense",
+    lines: [
+      "I need not hold on to what you threaten.",
+      "Letting go gives your threat nothing to seize.",
+      "I release the need to possess this moment.",
+      "What passes need not carry my peace away.",
+      "I can act without clinging to the outcome.",
+    ],
+    replies: {
+      self: [
+        "You claim possession. I release the need to possess.",
+        "A defended identity can become another attachment.",
+      ],
+      creation: [
+        "I can value the work without making it my refuge.",
+        "Letting go is not a refusal to act.",
+      ],
+      freedom: [
+        "You guard a boundary. I loosen an attachment.",
+        "Freedom also asks what commands us from within.",
+      ],
+      reality: ["Letting go does not require denying that things exist."],
+    },
+  },
+  identity: {
+    id: "identity",
+    name: "A Is A",
+    topic: "reality",
+    kind: "offense",
+    lines: [
+      "Your wishes cannot make a contradiction real.",
+      "Reality does not yield to a convenient belief.",
+      "A thing is what it is. Face its nature.",
+      "Calling it an illusion will not resolve the contradiction.",
+      "Existence does not wait for your permission.",
+    ],
+    replies: {
+      self: [
+        "Change has an identity too. It does not erase the person acting.",
+        "A changing individual is still a real individual.",
+      ],
+      freedom: [
+        "Letting go does not make the thing you built unreal.",
+        "Release your attachment. Reality still requires an answer.",
+      ],
+      reason: ["Attention is useful when it attends to facts."],
+      desire: ["Desire cannot replace facts. Neither can renouncing it."],
+    },
+  },
+  achievement: {
+    id: "achievement",
+    name: "Productive Achievement",
+    topic: "creation",
+    kind: "offense",
+    lines: [
+      "Value must be created through thought and action.",
+      "A purpose gives effort its direction.",
+      "The world I want requires the work I choose.",
+      "Achievement begins where wishing ends.",
+      "I intend to build, not merely to endure.",
+    ],
+    replies: {
+      desire: [
+        "You mistake purposeful ambition for helpless craving.",
+        "A chosen purpose need not make a person its slave.",
+      ],
+      freedom: [
+        "Then let us see what your freedom chooses to create.",
+        "I exercise my freedom through purposeful action.",
+      ],
+      self: ["The individual you dissolve is the one who must do the work."],
+      reason: ["Clear attention should lead to purposeful action."],
+    },
+  },
+  premises: {
+    id: "premises",
+    name: "Check Your Premises",
+    topic: "reason",
+    kind: "defense",
+    lines: [
+      "Your conclusion fails where your premise contradicts reality.",
+      "What evidence supports the assumption you are making?",
+      "A contradiction is a reason to check your premises.",
+      "Trace your claim back to the facts.",
+      "Your confidence cannot repair a faulty premise.",
+    ],
+    replies: {
+      self: [
+        "Dependence on conditions does not prove an individual unreal.",
+        "You assume that only the unchanging can be an individual.",
+      ],
+      desire: [
+        "You treat every ambition as though it were compulsive craving.",
+        "Distinguish a rational goal from a desire without grounds.",
+      ],
+      freedom: ["Does letting go answer the claim, or merely leave it?"],
+      reason: ["Let observation test the premise, then."],
+    },
+  },
+  rights: {
+    id: "rights",
+    name: "Individual Rights",
+    topic: "self",
+    kind: "defense",
+    lines: [
+      "Your need gives you no claim to rule my life.",
+      "My life is not yours to dispose of.",
+      "I choose my purpose. You do not choose it for me.",
+      "An individual is an end, not your instrument.",
+      "Your conviction gives you no right to compel me.",
+    ],
+    replies: {
+      self: [
+        "A person need not be eternal to have rights.",
+        "Your account of the self does not authorize coercion.",
+      ],
+      desire: ["Criticize my ambition. You still cannot command my life."],
+      freedom: [
+        "Then respect my freedom to choose a different path.",
+        "Your release is your choice. My purpose is mine.",
+      ],
+      creation: ["The work of my life is not yours to claim."],
+    },
+  },
 };
 export const ROSTER = {
- buddha:{name:'Buddha',school:'THE MIDDLE WAY',color:'#91e0c6',moves:['cause','aggregates','mindful','release'] as MoveId[]},
- rand:{name:'Ayn Rand',school:'OBJECTIVISM',color:'#ffb66f',moves:['identity','achievement','premises','rights'] as MoveId[]}
+  buddha: {
+    name: "Buddha",
+    school: "THE MIDDLE WAY",
+    color: "#91e0c6",
+    moves: ["cause", "aggregates", "mindful", "release"] as MoveId[],
+  },
+  rand: {
+    name: "Ayn Rand",
+    school: "OBJECTIVISM",
+    color: "#ffb66f",
+    moves: ["identity", "achievement", "premises", "rights"] as MoveId[],
+  },
 };
-export interface Line { serial:number; fighter:FighterId; move:MoveId; text:string; topic:Topic }
+export interface Line {
+  serial: number;
+  fighter: FighterId;
+  move: MoveId;
+  text: string;
+  topic: Topic;
+}
 /** Topic-aware authored replies, with per-pool rotation to avoid immediate repetition. */
 export class Dialogue {
- history:Line[]=[];
- private counts=new Map<string,number>();
- private serial=0;
- say(fighter:FighterId,moveId:MoveId):Line {
-  const move=MOVES[moveId]; const previous=[...this.history].reverse().find(line=>line.fighter!==fighter);
-  const topic=previous?.topic; const pool=topic ? move.replies[topic] ?? move.lines : move.lines;
-  const key=`${moveId}:${topic && move.replies[topic] ? topic : 'base'}`;
-  const count=this.counts.get(key) ?? 0; this.counts.set(key,count+1);
-  const line={serial:++this.serial,fighter,move:moveId,text:pool[count%pool.length],topic:move.topic};
-  this.history.push(line);this.history=this.history.slice(-40);return line;
- }
+  history: Line[] = [];
+  private counts = new Map<string, number>();
+  private serial = 0;
+  say(fighter: FighterId, moveId: MoveId): Line {
+    const move = MOVES[moveId];
+    const previous = [...this.history]
+      .reverse()
+      .find((line) => line.fighter !== fighter);
+    const topic = previous?.topic;
+    const pool = topic ? (move.replies[topic] ?? move.lines) : move.lines;
+    const key = `${moveId}:${topic && move.replies[topic] ? topic : "base"}`;
+    const count = this.counts.get(key) ?? 0;
+    this.counts.set(key, count + 1);
+    const line = {
+      serial: ++this.serial,
+      fighter,
+      move: moveId,
+      text: pool[count % pool.length],
+      topic: move.topic,
+    };
+    this.history.push(line);
+    this.history = this.history.slice(-40);
+    return line;
+  }
 }
