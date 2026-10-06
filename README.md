@@ -1,139 +1,26 @@
 # Street Philosophy Fighter
 
-The Ultimate Battle of Ideas
+A playable two-fighter prototype: Buddha versus Ayn Rand, built with React, Linaria, TypeScript, and Phaser using the codex-react-phaser-template scaffold.
 
-## About RCade
+## Run
 
-This game is built for [RCade](https://rcade.recurse.com), a custom arcade cabinet at The Recurse Center. Learn more about the project at [github.com/fcjr/RCade](https://github.com/fcjr/RCade).
-
-## Getting Started
-
-Install dependencies:
-
-```bash
-npm install
+```sh
+pnpm install
+pnpm dev
 ```
 
-Start the development server:
+For the RCade cabinet emulator: `pnpm dev:arcade`. Build with `pnpm build`; verify combat with `pnpm test`. Node 22.18+ or 24 is recommended for the TypeScript test runner. The existing RCade manifest is preserved.
 
-```bash
-npm run dev
-```
+## Controls
 
-This launches Vite on port 5173 and connects to the RCade cabinet emulator.
+Player 1: WASD or arrows to move, up to jump, down to crouch, F/Z for A (offense), G/X for B (defense). Player 2: IJKL, semicolon for A, apostrophe for B. 1/Enter starts solo; 2 starts local versus. Escape pauses. Gamepads use the left stick / d-pad and buttons 0 and 1. On-screen buttons support touch and pointer input. Cabinet controls come from @rcade/plugin-input-classic when embedded.
 
-## Building
+A: offense 1. Toward + A: offense 2. B: defense 1. Away + B: defense 2. Hold B for a basic guard. Directions are relative to the opponent. Moves trigger on the button's initial press, have a cooldown, and require release before repeating. Timed defenses grant brief immunity; guarded hits deal 20% damage. Ranged moves do 10 damage; close specials do 17 within range. A round ends at zero health or after 90 seconds, with remaining health deciding timeouts.
 
-```bash
-npm run build
-```
+## Dialogue and art
 
-Output goes to `dist/` and is ready for deployment.
+Every move has five base lines plus topic-specific replies, rotated to reduce repetition. Replies reference the most recent opposing argument; the last 40 exchanges can be read below the arena. All dialogue is original writing inspired by the philosophies, not historical quotations. Gemini is not connected in this prototype. No API key or network call is required to play.
 
-## Project Structure
+Characters, temple/city arena, and attack effects are procedurally drawn and animated in Phaser. These are stylized prototype illustrations, not finished sprite sheets. The 960×600 stage scales to browser and cabinet sizes. At cabinet heights the surrounding browser controls are hidden.
 
-```
-├── public/           # Static assets (copied as-is)
-├── src/
-│   ├── main.ts       # Game entry point
-│   └── style.css     # Styles
-├── index.html        # HTML entry
-├── vite.config.js    # Vite configuration
-├── tsconfig.json     # TypeScript config
-└── package.json
-```
-
-## Adding Assets
-
-**Imported assets** (recommended) - Place in `src/` and import them. Vite bundles these with hashed filenames for cache busting:
-
-```ts
-import spriteUrl from './sprite.png';
-import jumpSound from './jump.mp3';
-
-const img = new Image();
-img.src = spriteUrl;
-
-const sound = new Audio(jumpSound);
-sound.play();
-```
-
-**Static assets** - Place in `public/` for files copied as-is. Access via root path (`/sprite.png`).
-
-## Arcade Controls
-
-This template uses `@rcade/plugin-input-classic` for arcade input:
-
-```ts
-import { PLAYER_1, SYSTEM } from '@rcade/plugin-input-classic'
-
-// D-pad
-if (PLAYER_1.DPAD.up) { /* ... */ }
-if (PLAYER_1.DPAD.down) { /* ... */ }
-if (PLAYER_1.DPAD.left) { /* ... */ }
-if (PLAYER_1.DPAD.right) { /* ... */ }
-
-// Buttons
-if (PLAYER_1.A) { /* ... */ }
-if (PLAYER_1.B) { /* ... */ }
-
-// System
-if (SYSTEM.ONE_PLAYER) { /* Start game */ }
-```
-
-### Development Keyboard Controls
-
-When developing locally, keyboard inputs are mapped to arcade controls:
-
-**Classic Controls (`@rcade/plugin-input-classic`)**
-
-| Player   | Action           | Key |
-|----------|------------------|-----|
-| Player 1 | UP               | W   |
-| Player 1 | DOWN             | S   |
-| Player 1 | LEFT             | A   |
-| Player 1 | RIGHT            | D   |
-| Player 1 | A Button         | F   |
-| Player 1 | B Button         | G   |
-| Player 2 | UP               | I   |
-| Player 2 | DOWN             | K   |
-| Player 2 | LEFT             | J   |
-| Player 2 | RIGHT            | L   |
-| Player 2 | A Button         | ;   |
-| Player 2 | B Button         | '   |
-| System   | One Player Start | 1   |
-| System   | Two Player Start | 2   |
-
-**Spinner Controls (`@rcade/plugin-input-spinners`)**
-
-| Player   | Action        | Key |
-|----------|---------------|-----|
-| Player 1 | Spinner Left  | C   |
-| Player 1 | Spinner Right | V   |
-| Player 2 | Spinner Left  | .   |
-| Player 2 | Spinner Right | /   |
-
-Spinners repeat at ~60Hz while held.
-
-To add spinner support: `npm install @rcade/plugin-input-spinners`
-
-## Deployment
-
-First, create a new repository on GitHub:
-
-1. Go to [github.com/new](https://github.com/new)
-2. Create a new repository (can be public or private)
-3. **Don't** initialize it with a README, .gitignore, or license
-
-Then connect your local project and push:
-
-```bash
-git remote add origin git@github.com:YOUR_USERNAME/YOUR_REPO.git
-git push -u origin main
-```
-
-The included GitHub Actions workflow will automatically deploy to RCade.
-
----
-
-Made with <3 at [The Recurse Center](https://recurse.com)
+Combat rules live in src/engine.ts, move definitions and replies in src/dialogue.ts, Phaser drawing/input in src/arena.ts, and the interface in src/App.tsx. Future generated dialogue should preserve the selected move, use recent conversation context, prepare candidate replies asynchronously, and fall back to these authored lines without blocking combat. Keep provider credentials on a server.

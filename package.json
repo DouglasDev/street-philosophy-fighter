@@ -1,20 +1,35 @@
 {
-    "name": "street-philosophy-fighter",
-    "private": false,
-    "version": "1.0.0",
-    "description": "The Ultimate Battle of Ideas",
-    "type": "module",
-    "scripts": {
-        "dev": "concurrently \"vite --port 5173 --strictPort\" \"rcade dev http://localhost:5173\"",
-        "build": "vite build"
-    },
-    "devDependencies": {
-        "concurrently": "^9.0.0",
-        "rcade": "^0.0.50",
-        "typescript": "~5.9.3",
-        "vite": "^7.2.4"
-    },
-    "dependencies": {
-        "@rcade/plugin-input-classic": "^0.2.1"
-    }
+  "name": "street-philosophy-fighter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.12.4",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "typecheck": "tsc --noEmit",
+    "build": "pnpm run typecheck && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "dev:arcade": "concurrently \"vite --port 5173 --strictPort\" \"rcade dev http://localhost:5173\"",
+    "test": "node --experimental-strip-types --test tests/engine.test.ts"
+  },
+  "dependencies": {
+    "@linaria/react": "7.0.1",
+    "phaser": "4.0.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "@rcade/plugin-input-classic": "^0.2.1"
+  },
+  "devDependencies": {
+    "@babel/core": "7.29.7",
+    "@babel/preset-react": "7.28.5",
+    "@babel/preset-typescript": "7.28.5",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.1",
+    "@wyw-in-js/vite": "1.1.0",
+    "typescript": "6.0.3",
+    "vite": "8.3.1",
+    "concurrently": "^9.0.0",
+    "rcade": "^0.0.50"
+  }
 }
