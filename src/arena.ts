@@ -45,9 +45,20 @@ export function releaseControls() {
   Object.assign(controls.pending1, emptyInput());
   Object.assign(controls.pending2, emptyInput());
 }
+export interface ArenaProjection {
+  positions: { x: number; y: number }[];
+  width: number;
+  height: number;
+}
 export class Arena extends Phaser.Scene {
   match = new Match();
   private ink!: Phaser.GameObjects.Graphics;
+  private scenery!: Phaser.GameObjects.Graphics;
+  private worldWidth = 960;
+  private worldHeight = 600;
+  private originX = 0;
+  private originY = 0;
+  private zoom = 1;
   private elapsed = 0;
   private lastUi = 0;
   private lastEffect = 0;
@@ -60,12 +71,16 @@ export class Arena extends Phaser.Scene {
         SYSTEM: { ONE_PLAYER: boolean; TWO_PLAYER: boolean };
       }
     | undefined;
-  constructor(private publish: (match: Match) => void) {
+  constructor(
+    private publish: (match: Match, projection: ArenaProjection) => void,
+  ) {
     super("arena");
   }
   create() {
-    this.background();
+    this.scenery = this.add.graphics();
     this.ink = this.add.graphics();
+    this.layout();
+    this.scale.on("resize", this.layout, this);
     const down = (event: KeyboardEvent) => {
       if (
         event.target instanceof HTMLElement &&
@@ -86,6 +101,8 @@ export class Arena extends Phaser.Scene {
           "d",
           "f",
           "g",
+          "z",
+          "x",
           "i",
           "j",
           "k",
@@ -115,7 +132,7 @@ export class Arena extends Phaser.Scene {
       this.pendingKeys.clear();
       releaseControls();
       if (this.match.phase === "playing") this.match.pause();
-      this.publish(this.match);
+      this.publishMatch();
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
@@ -125,6 +142,7 @@ export class Arena extends Phaser.Scene {
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", blur);
       releaseControls();
+      this.scale.off("resize", this.layout, this);
     });
     if (window.parent !== window)
       void import("@rcade/plugin-input-classic")
@@ -134,7 +152,7 @@ export class Arena extends Phaser.Scene {
         .catch(() => {
           /* Keyboard and gamepad remain available outside RCade. */
         });
-    this.publish(this.match);
+    this.publishMatch();
   }
   private readInput(index: number): Input {
     const k = {
@@ -212,13 +230,40 @@ export class Arena extends Phaser.Scene {
     }
     if (_time - this.lastUi > 70) {
       this.lastUi = _time;
-      this.publish(this.match);
+      this.publishMatch();
     }
   }
+  private publishMatch() {
+    this.publish(this.match, {
+      width: this.scale.width,
+      height: this.scale.height,
+      positions: this.match.fighters.map((f) => ({
+        x: (f.x + this.originX) * this.zoom,
+        y: (f.y - 155 + this.originY) * this.zoom,
+      })),
+    });
+  }
+  private layout() {
+    const width = this.scale.width,
+      height = this.scale.height;
+    this.zoom = Math.min(width / 960, height / 450);
+    this.worldWidth = width / this.zoom;
+    this.worldHeight = height / this.zoom;
+    this.originX = (this.worldWidth - 960) / 2;
+    this.originY = this.worldHeight * 0.82 - 425;
+    this.cameras.main
+      .setZoom(this.zoom)
+      .centerOn(this.worldWidth / 2, this.worldHeight / 2);
+    this.ink.setPosition(this.originX, this.originY);
+    this.scenery.setPosition(this.originX, this.originY);
+    this.background();
+    this.publishMatch();
+  }
   private background() {
-    const g = this.add.graphics();
+    const g = this.scenery;
+    g.clear();
     g.fillGradientStyle(0x152932, 0x252733, 0x0c151c, 0x131b22, 1);
-    g.fillRect(0, 0, 960, 600);
+    g.fillRect(-this.originX, -this.originY, this.worldWidth, this.worldHeight);
     g.fillStyle(0x8be0c1, 0.035);
     g.fillCircle(265, 245, 230);
     g.fillStyle(0xffb36b, 0.035);
@@ -264,25 +309,15 @@ export class Arena extends Phaser.Scene {
       }
     }
     g.fillStyle(0x0c191f, 1);
-    g.fillRect(0, 423, 960, 177);
+    const floorBottom = this.worldHeight - this.originY;
+    g.fillRect(-this.originX, 423, this.worldWidth, floorBottom - 423);
     g.lineStyle(2, 0xcac1a0, 0.4);
-    g.lineBetween(0, 425, 960, 425);
+    g.lineBetween(-this.originX, 425, 960 + this.originX, 425);
     g.lineStyle(1, 0x4e7065, 0.25);
-    for (let x = -400; x < 1400; x += 100)
-      g.lineBetween(480 + (x - 480) * 0.5, 427, x, 600);
-    for (let y = 438; y < 600; y += 24) g.lineBetween(0, y, 960, y);
-    g.fillStyle(0x12242a, 1);
-    g.fillRect(0, 453, 960, 147);
-    g.lineStyle(1, 0x6a8578, 0.25);
-    g.lineBetween(0, 453, 960, 453);
-    this.add
-      .text(480, 212, "THE COURT OF CONTRADICTIONS", {
-        fontFamily: "Georgia, serif",
-        fontSize: "12px",
-        color: "#8a9e98",
-        letterSpacing: 4,
-      })
-      .setOrigin(0.5);
+    for (let x = -400 - this.originX; x < 1400 + this.originX; x += 100)
+      g.lineBetween(480 + (x - 480) * 0.5, 427, x, floorBottom);
+    for (let y = 438; y < floorBottom; y += 24)
+      g.lineBetween(-this.originX, y, 960 + this.originX, y);
   }
   private draw() {
     const g = this.ink;
