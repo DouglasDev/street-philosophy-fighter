@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { styled } from "@linaria/react";
 import * as Phaser from "phaser";
 import { Arena, controls, releaseControls } from "./arena";
+import { CABINET_WIDTH, CABINET_HEIGHT } from "./display";
 import { ROSTER } from "./dialogue";
 import type { Line } from "./dialogue";
 import { DEBATE, TOPIC, ZONES, MAX_EXCHANGES } from "./debate";
@@ -11,8 +12,8 @@ import type { DebateStage, Phase } from "./engine";
 const Stage = styled.main`
   position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100dvh;
+  width: 336px;
+  height: 262px;
   overflow: hidden;
   background: #152932;
   canvas {
@@ -647,8 +648,8 @@ const initial: View = {
     { x: 300, y: 270 },
     { x: 660, y: 270 },
   ],
-  width: 960,
-  height: 600,
+  width: CABINET_WIDTH,
+  height: CABINET_HEIGHT,
 };
 export function App() {
   const host = useRef<HTMLDivElement>(null),
@@ -664,10 +665,10 @@ export function App() {
     const game = new Phaser.Game({
       type: Phaser.CANVAS,
       parent: host.current,
-      width: host.current.clientWidth,
-      height: host.current.clientHeight,
+      width: CABINET_WIDTH,
+      height: CABINET_HEIGHT,
       backgroundColor: "#152932",
-      scale: { mode: Phaser.Scale.RESIZE },
+      scale: { mode: Phaser.Scale.NONE },
       scene: [scene],
       audio: { noAudio: true },
       input: { keyboard: false, mouse: false, touch: false, gamepad: false },

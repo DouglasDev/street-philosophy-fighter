@@ -11,6 +11,12 @@ pnpm dev
 
 Use `pnpm dev:arcade` for the RCade cabinet emulator, `pnpm build` for the production bundle, and `pnpm test` for the debate/combat checks. Node 22.18+ or 24 is recommended for the TypeScript test runner. The RCade manifest is preserved.
 
+## Cabinet resolution and laptop preview
+
+Phaser and the HTML game interface use a fixed **336 × 262** logical viewport, matching RCade's emulator. Opening the game directly on a laptop shows the same viewport enlarged up to 2×, centered with letterboxing. The preview runs inside a fixed-size iframe so media queries, text wrapping, and speech bubbles behave at cabinet resolution rather than at laptop resolution. Click inside it to use keyboard controls. Resize the laptop window without changing the game's logical dimensions.
+
+The cabinet loads the game directly and uses its input plugin. The laptop preview uses keyboard/gamepad controls. Background sky bands use Canvas-compatible opaque fills; Phaser's WebGL-only graphics gradient is not used.
+
 ## Debate loop
 
 The topic stays at the top: **Does ambition help us flourish, or make us suffer?** Each claim has a high conclusion, middle inference, and low premise. Inspect all three before choosing among three specific objections. Their strength is authored in advance and revealed through the outcome and explanation, rather than a score beside the choice.

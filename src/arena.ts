@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { CABINET_WIDTH, CABINET_HEIGHT, isCabinet } from "./display";
 import { Match, emptyInput } from "./engine.ts";
 import { WINDUP } from "./engine.ts";
 import type { Zone } from "./debate.ts";
@@ -144,7 +145,7 @@ export class Arena extends Phaser.Scene {
       if (this.match.phase === "playing") this.match.pause();
       this.publishMatch();
     };
-    const cabinet = window.parent !== window;
+    const cabinet = isCabinet;
     if (!cabinet) {
       window.addEventListener("keydown", down);
       window.addEventListener("keyup", up);
@@ -199,7 +200,7 @@ export class Arena extends Phaser.Scene {
             )[name],
           ));
     const pad =
-      window.parent === window
+      !isCabinet
         ? [...navigator.getGamepads()].filter(Boolean)[index]
         : undefined;
     if (pad) {
@@ -269,8 +270,8 @@ export class Arena extends Phaser.Scene {
   }
   private publishMatch() {
     this.publish(this.match, {
-      width: this.scale.width,
-      height: this.scale.height,
+      width: CABINET_WIDTH,
+      height: CABINET_HEIGHT,
       positions: this.match.fighters.map((f) => ({
         x: (f.x + this.originX) * this.zoom,
         y: (f.y - 155 + this.originY) * this.zoom,
@@ -278,8 +279,8 @@ export class Arena extends Phaser.Scene {
     });
   }
   private layout() {
-    const width = this.scale.width,
-      height = this.scale.height;
+    const width = CABINET_WIDTH,
+      height = CABINET_HEIGHT;
     this.zoom = Math.min(width / 960, height / 450);
     this.worldWidth = width / this.zoom;
     this.worldHeight = height / this.zoom;
@@ -296,8 +297,21 @@ export class Arena extends Phaser.Scene {
   private background() {
     const g = this.scenery;
     g.clear();
-    g.fillGradientStyle(0x152932, 0x252733, 0x0c151c, 0x131b22, 1);
-    g.fillRect(-this.originX, -this.originY, this.worldWidth, this.worldHeight);
+    // Graphics gradients are WebGL-only. Draw opaque Canvas-compatible sky bands.
+    const bands = 32;
+    for (let i = 0; i < bands; i++) {
+      const t = i / (bands - 1);
+      const r = Math.round(21 + (12 - 21) * t);
+      const green = Math.round(41 + (21 - 41) * t);
+      const b = Math.round(50 + (28 - 50) * t);
+      g.fillStyle((r << 16) | (green << 8) | b, 1);
+      g.fillRect(
+        -this.originX,
+        -this.originY + i * this.worldHeight / bands,
+        this.worldWidth,
+        this.worldHeight / bands + 1,
+      );
+    }
     g.fillStyle(0x8be0c1, 0.035);
     g.fillCircle(265, 245, 230);
     g.fillStyle(0xffb36b, 0.035);
