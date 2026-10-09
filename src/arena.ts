@@ -144,17 +144,22 @@ export class Arena extends Phaser.Scene {
       if (this.match.phase === "playing") this.match.pause();
       this.publishMatch();
     };
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
+    const cabinet = window.parent !== window;
+    if (!cabinet) {
+      window.addEventListener("keydown", down);
+      window.addEventListener("keyup", up);
+    }
     window.addEventListener("blur", blur);
     this.events.once("shutdown", () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
+      if (!cabinet) {
+        window.removeEventListener("keydown", down);
+        window.removeEventListener("keyup", up);
+      }
       window.removeEventListener("blur", blur);
       releaseControls();
       this.scale.off("resize", this.layout, this);
     });
-    if (window.parent !== window)
+    if (cabinet)
       void import("@rcade/plugin-input-classic")
         .then((module) => {
           this.arcade = module;
@@ -193,7 +198,10 @@ export class Arena extends Phaser.Scene {
               } as const
             )[name],
           ));
-    const pad = [...navigator.getGamepads()].filter(Boolean)[index];
+    const pad =
+      window.parent === window
+        ? [...navigator.getGamepads()].filter(Boolean)[index]
+        : undefined;
     if (pad) {
       result.left ||= pad.axes[0] < -0.3 || !!pad.buttons[14]?.pressed;
       result.right ||= pad.axes[0] > 0.3 || !!pad.buttons[15]?.pressed;

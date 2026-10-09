@@ -313,9 +313,25 @@ const Instructions = styled.div`
   }
 `;
 
+const PrototypeLabel = styled.div`
+  position: absolute;
+  top: 4px;
+  left: 0;
+  right: 0;
+  color: #ff4545;
+  font: 900 clamp(12px, 1.3vw, 18px) system-ui;
+  letter-spacing: 0.12em;
+  text-align: center;
+  z-index: 4;
+  pointer-events: none;
+  @media (max-height: 420px) {
+    top: 2px;
+    font-size: 10px;
+  }
+`;
 const Topic = styled.div`
   position: absolute;
-  top: 1.4%;
+  top: 28px;
   left: 4%;
   right: 4%;
   text-align: center;
@@ -324,7 +340,7 @@ const Topic = styled.div`
   font-size: clamp(13px, 2vw, 24px);
   line-height: 1.25;
   @media (max-height: 420px) {
-    top: 5px;
+    top: 16px;
     font-size: 12px;
   }
 `;
@@ -654,6 +670,7 @@ export function App() {
       scale: { mode: Phaser.Scale.RESIZE },
       scene: [scene],
       audio: { noAudio: true },
+      input: { keyboard: false, mouse: false, touch: false, gamepad: false },
       banner: false,
     });
     return () => game.destroy(true);
@@ -700,6 +717,7 @@ export function App() {
   return (
     <Stage aria-label="Offline debate fighting arena">
       <Canvas ref={host} />
+      <PrototypeLabel>PROTOTYPE</PrototypeLabel>
       <Topic>{TOPIC}</Topic>
       <Hud>
         {ids.map((id, i) => (
