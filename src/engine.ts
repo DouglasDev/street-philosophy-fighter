@@ -1,6 +1,14 @@
-import { Dialogue, ROSTER, MOVES } from "./dialogue.ts";
-import type { FighterId, MoveId } from "./dialogue.ts";
+import { Dialogue, ROSTER } from "./dialogue.ts";
+import type { FighterId, MoveId, Line } from "./dialogue.ts";
+import { DEBATE, ENTRY, MAX_EXCHANGES } from "./debate.ts";
+import type { Rebuttal, Answer, Zone } from "./debate.ts";
 export type Phase = "ready" | "playing" | "paused" | "finished";
+export type DebateStage =
+  | "select"
+  | "windup"
+  | "impact"
+  | "answer"
+  | "continue";
 export interface Input {
   left: boolean;
   right: boolean;
@@ -33,6 +41,9 @@ export interface Fighter {
   move: MoveId | null;
   hit: number;
   previous: Input;
+  pressure: number;
+  guardZone: Zone;
+  stance: boolean;
 }
 export interface Projectile {
   owner: number;
@@ -49,38 +60,79 @@ export interface Effect {
   color: string;
   life: number;
 }
+export const WINDUP = 1.6;
+export const PARRY_WINDOW = 0.35;
 export class Match {
   phase: Phase = "ready";
-  time = 90;
   mode: "solo" | "versus" = "solo";
   winner: FighterId | "draw" | null = null;
   fighters: Fighter[] = [];
   projectiles: Projectile[] = [];
   effects: Effect[] = [];
   dialogue = new Dialogue();
-  private clock = 0;
-  private aiThink = 0;
-  private aiInput = emptyInput();
+  stage: DebateStage = "select";
+  nodeId = ENTRY;
+  options: Rebuttal[] = [];
+  answers: Answer[] = [];
+  selection = 0;
+  reviewZone: Zone = "high";
+  reviewing = false;
+  private reviewSteps = 0;
+  exchange = 1;
+  remaining = 0;
+  selected: Rebuttal | null = null;
+  answered: Answer | null = null;
+  result = "";
+  explanation = "";
+  lastDamage = 0;
+  lastDefense: "parry" | "block" | "hit" | null = null;
   private serial = 0;
+  private aiElapsed = 0;
+  private defenseAt = Infinity;
+  private defenseZone: Zone = "high";
+  private guardLinger = 0;
+  private aiDefense: "parry" | "block" | "hit" = "hit";
+  private aiHasDefended = false;
   private random: () => number;
   constructor(random: () => number = Math.random) {
     this.random = random;
     this.reset();
   }
+  get node() {
+    return DEBATE[this.nodeId];
+  }
+  get defender() {
+    return this.node.claimant === "buddha" ? 0 : 1;
+  }
+  get attacker() {
+    return 1 - this.defender;
+  }
+  get actor() {
+    return this.stage === "answer" ? this.defender : this.attacker;
+  }
+  get humanTurn() {
+    return this.mode === "versus" || this.actor === 0;
+  }
+  private shuffled<T>(items: T[]): T[] {
+    const result = [...items];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(this.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
   reset(mode: "solo" | "versus" = this.mode) {
     this.mode = mode;
     this.phase = "ready";
-    this.time = 90;
     this.winner = null;
-    this.clock = 0;
-    this.aiThink = 0;
-    this.aiInput = emptyInput();
-    this.projectiles = [];
+    this.exchange = 1;
     this.effects = [];
+    this.projectiles = [];
     this.dialogue = new Dialogue();
+    this.serial = 0;
     this.fighters = (["buddha", "rand"] as FighterId[]).map((id, i) => ({
       id,
-      x: i ? 700 : 260,
+      x: i ? 660 : 300,
       y: 425,
       vy: 0,
       hp: 100,
@@ -94,7 +146,11 @@ export class Match {
       move: null,
       hit: 0,
       previous: emptyInput(),
+      pressure: 0,
+      guardZone: "high",
+      stance: false,
     }));
+    this.load(ENTRY);
   }
   start(mode: "solo" | "versus" = this.mode) {
     this.reset(mode);
@@ -104,164 +160,285 @@ export class Match {
     if (this.phase === "playing") this.phase = "paused";
     else if (this.phase === "paused") this.phase = "playing";
   }
-  effect(kind: Effect["kind"], x: number, y: number, fighter: Fighter) {
+  private say(index: number, text: string, move: MoveId) {
+    const line: Line = {
+      serial: ++this.serial,
+      fighter: this.fighters[index].id,
+      move,
+      text,
+      topic: "reason",
+    };
+    this.dialogue.history.push(line);
+  }
+  private load(id: string) {
+    this.nodeId = id;
+    this.stage = "select";
+    this.options = this.shuffled(this.node.choices);
+    this.answers = [];
+    this.selection = 0;
+    this.reviewZone = "high";
+    this.reviewing = false;
+    this.reviewSteps = 0;
+    this.selected = null;
+    this.answered = null;
+    this.result = "";
+    this.explanation = "";
+    this.remaining = 0;
+    this.aiElapsed = 0;
+    this.guardLinger = 0;
+    this.defenseAt = Infinity;
+    this.lastDefense = null;
+    this.lastDamage = 0;
+    this.fighters.forEach((f, i) => {
+      f.x = i ? 660 : 300;
+      f.y = 425;
+      f.active = 0;
+      f.guard = false;
+      f.crouch = false;
+      f.stance = i === this.defender;
+      f.guardZone = "high";
+    });
+    this.say(
+      this.defender,
+      this.node.claim.high,
+      this.defender ? "identity" : "cause",
+    );
+  }
+  review() {
+    if (
+      this.phase === "playing" &&
+      (this.stage === "select" || this.stage === "answer")
+    ) {
+      const zones: Zone[] = ["high", "middle", "low"];
+      if (this.stage === "answer") {
+        this.reviewSteps = (this.reviewSteps + 1) % 4;
+        this.reviewing = this.reviewSteps !== 0;
+        if (this.reviewing) this.reviewZone = zones[this.reviewSteps - 1];
+      } else this.reviewZone = zones[(zones.indexOf(this.reviewZone) + 1) % 3];
+    }
+  }
+  choose(index: number) {
+    if (this.phase !== "playing" || index < 0 || index > 2) return;
+    if (this.stage === "select") {
+      this.selected = this.options[index];
+      this.selection = index;
+      this.answers = this.shuffled(this.selected.answers);
+      this.stage = "windup";
+      this.remaining = WINDUP;
+      this.aiElapsed = 0;
+      this.defenseAt = Infinity;
+      this.guardLinger = 0;
+      this.aiHasDefended = false;
+      const r = this.random();
+      this.aiDefense = r < 0.35 ? "parry" : r < 0.8 ? "block" : "hit";
+      const f = this.fighters[this.attacker];
+      f.move = this.selected.move;
+      f.active = WINDUP + 0.35;
+      f.stance = false;
+      this.say(this.attacker, this.selected.text, this.selected.move);
+    } else if (this.stage === "answer") {
+      const answer = this.answers[index];
+      this.answered = answer;
+      this.selection = index;
+      const f = this.fighters[this.defender];
+      if (answer.quality === 0)
+        f.pressure = Math.min(
+          3,
+          f.pressure + (this.selected!.strength >= 2 ? 2 : 1),
+        );
+      else if (
+        answer.kind === "concede" ||
+        answer.quality >= this.selected!.strength
+      )
+        f.pressure = Math.max(0, f.pressure - 1);
+      else f.pressure = Math.min(3, f.pressure + 1);
+      f.move =
+        answer.kind === "concede"
+          ? f.id === "buddha"
+            ? "release"
+            : "rights"
+          : f.id === "buddha"
+            ? "mindful"
+            : "premises";
+      f.active = 0.8;
+      this.say(this.defender, answer.text, f.move);
+      this.explanation = `${this.selected!.explanation} ${answer.explanation}`;
+      this.result =
+        answer.kind === "evade"
+          ? "Objection unanswered · guard weakened"
+          : answer.kind === "concede"
+            ? "Claim revised · pressure released"
+            : "Objection addressed";
+      this.stage = "continue";
+      this.aiElapsed = 0;
+    }
+  }
+  defend(zone: Zone) {
+    if (this.phase !== "playing" || this.stage !== "windup") return;
+    this.defenseAt = this.remaining;
+    this.defenseZone = zone;
+    this.guardLinger = 0.28;
+    const f = this.fighters[this.defender];
+    f.guard = true;
+    f.guardZone = zone;
+  }
+  advance() {
+    if (this.phase !== "playing" || this.stage !== "continue" || !this.answered)
+      return;
+    if (
+      this.exchange >= MAX_EXCHANGES ||
+      this.fighters.some((f) => f.hp === 0)
+    ) {
+      this.finish();
+      return;
+    }
+    const next = this.answered.next;
+    this.exchange++;
+    this.load(next);
+  }
+  private finish() {
+    this.phase = "finished";
+    const [a, b] = this.fighters;
+    this.winner = a.hp === b.hp ? "draw" : a.hp > b.hp ? a.id : b.id;
+  }
+  private effect(kind: Effect["kind"], target: Fighter, zone: Zone) {
     this.effects.push({
       id: ++this.serial,
       kind,
-      x,
-      y,
-      color: ROSTER[fighter.id].color,
-      life: 0.5,
+      x: target.x,
+      y: target.y - (zone === "high" ? 118 : zone === "middle" ? 65 : 20),
+      color: ROSTER[target.id].color,
+      life: 0.6,
     });
+  }
+  private impact() {
+    const choice = this.selected!,
+      f = this.fighters[this.defender];
+    const parry =
+      this.defenseAt <= PARRY_WINDOW && this.defenseZone === choice.target;
+    const block = !parry && f.guard && f.guardZone === choice.target;
+    this.lastDefense = parry ? "parry" : block ? "block" : "hit";
+    const base = 8 + choice.strength * 4 + f.pressure * 3;
+    this.lastDamage = parry ? 0 : block ? Math.ceil(base * 0.3) : base;
+    f.hp = Math.max(0, f.hp - this.lastDamage);
+    f.hit = parry ? 0 : 0.35;
+    this.effect(parry ? "dodge" : block ? "block" : "hit", f, choice.target);
+    this.result = parry
+      ? "Parried · now answer the objection"
+      : block
+        ? `Blocked · ${this.lastDamage} damage`
+        : `${this.lastDamage} damage · ${choice.strength === 0 ? "The challenge missed the argument" : "The challenge found its target"}`;
+    this.projectiles = [];
+    this.stage = "impact";
+    this.remaining = 1.6;
   }
   tick(dt: number, p1: Input, p2: Input = emptyInput()) {
     if (this.phase !== "playing") return;
     dt = Math.min(dt, 0.04);
-    this.clock += dt;
-    this.time = Math.max(0, this.time - dt);
-    const inputs = [p1, this.mode === "solo" ? this.computer(dt) : p2];
-    this.fighters.forEach((f, i) => {
-      const input = inputs[i],
-        op = this.fighters[1 - i];
-      f.facing = op.x >= f.x ? 1 : -1;
-      for (const key of [
-        "cooldown",
-        "active",
-        "immune",
-        "stun",
-        "hit",
-      ] as const)
-        f[key] = Math.max(0, f[key] - dt);
-      f.guard = input.b && f.y >= 425;
-      f.crouch = input.down && f.y >= 425;
-      const axis = Number(input.right) - Number(input.left);
-      if (!f.stun && f.active < 0.12) {
-        f.x = Math.max(
-          65,
-          Math.min(895, f.x + axis * (f.guard ? 65 : f.crouch ? 85 : 185) * dt),
-        );
-        if (input.up && !f.previous.up && f.y >= 425) {
-          f.vy = -465;
-        }
-      }
-      f.vy += 1150 * dt;
-      f.y = Math.min(425, f.y + f.vy * dt);
-      if (f.y === 425) f.vy = 0;
-      if (!f.stun && f.cooldown === 0) {
-        if (input.a && !f.previous.a)
-          this.perform(i, ROSTER[f.id].moves[axis === f.facing ? 1 : 0]);
-        else if (input.b && !f.previous.b)
-          this.perform(i, ROSTER[f.id].moves[axis === -f.facing ? 3 : 2]);
-      }
-      f.previous = { ...input };
-    });
-    const [a, b] = this.fighters;
-    if (Math.abs(a.x - b.x) < 65 && Math.abs(a.y - b.y) < 85) {
-      const mid = (a.x + b.x) / 2;
-      const sign = a.x <= b.x ? 1 : -1;
-      a.x = mid - 33 * sign;
-      b.x = mid + 33 * sign;
+    this.aiElapsed += dt;
+    this.guardLinger = Math.max(0, this.guardLinger - dt);
+    for (const f of this.fighters) {
+      f.active = Math.max(0, f.active - dt);
+      f.hit = Math.max(0, f.hit - dt);
     }
-    this.projectiles = this.projectiles.filter((p) => {
-      p.x += p.direction * 420 * dt;
-      p.life -= dt;
-      const target = this.fighters[1 - p.owner];
-      if (
-        Math.abs(p.x - target.x) < 32 &&
-        Math.abs(p.y - (target.y - 65)) < (target.crouch ? 22 : 55)
-      ) {
-        this.damage(p.owner, 10, p.x, p.y);
-        return false;
-      }
-      return p.life > 0 && p.x > 0 && p.x < 960;
-    });
     this.effects = this.effects.filter((e) => {
       e.life -= dt;
       return e.life > 0;
     });
-    if (this.time === 0 || this.fighters.some((f) => f.hp === 0)) {
-      this.phase = "finished";
-      this.winner = a.hp === b.hp ? "draw" : a.hp > b.hp ? a.id : b.id;
-    }
-  }
-  perform(index: number, id: MoveId) {
-    const f = this.fighters[index],
-      target = this.fighters[1 - index];
-    f.move = id;
-    f.active = 0.58;
-    f.cooldown = MOVES[id].kind === "defense" ? 1.15 : 0.85;
-    this.dialogue.say(f.id, id);
-    if (MOVES[id].kind === "defense") {
-      f.immune = id === "release" ? 0.65 : 0.3;
-      if (id === "release") {
-        f.x = Math.max(65, Math.min(895, f.x - f.facing * 85));
-        this.effect("dodge", f.x, f.y - 70, f);
-      } else if (id === "rights") {
-        if (Math.abs(f.x - target.x) < 150)
-          target.x = Math.max(65, Math.min(895, target.x + f.facing * 75));
-        this.effect("block", f.x, f.y - 65, f);
-      } else this.effect("block", f.x, f.y - 65, f);
-    } else if (id === "cause" || id === "identity") {
-      this.projectiles.push({
-        owner: index,
-        x: f.x + f.facing * 45,
-        y: f.y - 65,
-        direction: f.facing,
-        life: 2.4,
+    const inputs = [p1, p2],
+      actorInput = inputs[this.actor],
+      previous = this.fighters[this.actor].previous;
+    if (this.stage === "select" || this.stage === "answer") {
+      // Reading has no countdown. Each tap changes one option; holding does not race through them.
+      if (this.humanTurn) {
+        if (
+          (actorInput.down && !previous.down) ||
+          (actorInput.right && !previous.right)
+        )
+          this.selection = (this.selection + 1) % 3;
+        if (
+          (actorInput.up && !previous.up) ||
+          (actorInput.left && !previous.left)
+        )
+          this.selection = (this.selection + 2) % 3;
+        if (actorInput.a && !previous.a) this.choose(this.selection);
+      } else if (this.aiElapsed > (this.stage === "select" ? 4 : 2.8)) {
+        const pool = this.stage === "select" ? this.options : this.answers;
+        const scores = pool.map((item) =>
+          "strength" in item ? item.strength : item.quality,
+        );
+        const best = scores.indexOf(Math.max(...scores));
+        this.choose(
+          this.random() < 0.75 ? best : Math.floor(this.random() * 3),
+        );
+      }
+      if (inputs.some((input, i) => input.b && !this.fighters[i].previous.b))
+        this.review();
+    } else if (this.stage === "windup") {
+      const f = this.fighters[this.defender],
+        input = inputs[this.defender];
+      if (this.mode === "solo" && this.defender === 1) {
+        if (
+          !this.aiHasDefended &&
+          ((this.aiDefense === "parry" && this.remaining < 0.26) ||
+            (this.aiDefense === "block" && this.remaining < 0.8))
+        ) {
+          this.defend(this.selected!.target);
+          this.aiHasDefended = true;
+        }
+        f.guard =
+          (this.aiDefense === "block" && this.aiHasDefended) ||
+          this.guardLinger > 0;
+      } else {
+        if (input.up) f.guardZone = "high";
+        else if (input.down) f.guardZone = "low";
+        else if (input.b) f.guardZone = "middle";
+        f.guard = input.b || this.guardLinger > 0;
+        if (input.b && !f.previous.b) this.defend(f.guardZone);
+      }
+      f.crouch = f.guardZone === "low";
+      f.stance = true;
+      const progress = 1 - this.remaining / WINDUP,
+        attacker = this.fighters[this.attacker],
+        from = this.attacker ? 660 : 300;
+      attacker.x =
+        from +
+        (f.x - attacker.facing * 100 - from) *
+          Math.max(0, Math.min(1, (progress - 0.25) / 0.75));
+      if (this.selected!.target === "middle")
+        this.projectiles = [
+          {
+            owner: this.attacker,
+            x: from + (f.x - from) * progress,
+            y: f.y - 65,
+            direction: attacker.facing,
+            life: this.remaining,
+          },
+        ];
+      this.remaining = Math.max(0, this.remaining - dt);
+      if (this.remaining === 0) this.impact();
+    } else if (this.stage === "impact") {
+      this.fighters.forEach((f, i) => {
+        f.x += ((i ? 660 : 300) - f.x) * Math.min(1, dt * 5);
       });
-      this.effect("cast", f.x + f.facing * 45, f.y - 65, f);
-    } else {
-      f.x = Math.max(65, Math.min(895, f.x + f.facing * 35));
-      this.effect("cast", f.x + f.facing * 65, f.y - 65, f);
-      if (Math.abs(f.x - target.x) < 160 && Math.abs(f.y - target.y) < 90)
-        this.damage(index, 17, target.x, target.y - 65);
+      this.remaining = Math.max(0, this.remaining - dt);
+      if (this.remaining === 0) {
+        if (this.fighters.some((f) => f.hp === 0)) this.finish();
+        else {
+          this.stage = "answer";
+          this.selection = 0;
+          this.aiElapsed = 0;
+        }
+      }
+    } else if (this.stage === "continue") {
+      if (
+        (p1.a && !this.fighters[0].previous.a) ||
+        (p2.a && !this.fighters[1].previous.a)
+      )
+        this.advance();
     }
-  }
-  damage(owner: number, amount: number, x: number, y: number) {
-    const target = this.fighters[1 - owner];
-    if (target.immune > 0) {
-      this.effect("dodge", x, y, target);
-      return;
-    }
-    const blocked = target.guard;
-    target.hp = Math.max(0, target.hp - (blocked ? amount * 0.2 : amount));
-    target.hit = 0.24;
-    target.stun = blocked ? 0.08 : 0.24;
-    target.x = Math.max(
-      65,
-      Math.min(
-        895,
-        target.x + this.fighters[owner].facing * (blocked ? 6 : 20),
-      ),
-    );
-    this.effect(blocked ? "block" : "hit", x, y, target);
-  }
-  private computer(dt: number): Input {
-    this.aiThink -= dt;
-    const f = this.fighters[1],
-      op = this.fighters[0],
-      distance = Math.abs(f.x - op.x),
-      toward = op.x > f.x ? 1 : -1;
-    if (this.aiThink <= 0) {
-      this.aiThink = 0.24 + this.random() * 0.3;
-      this.aiInput = emptyInput();
-      const danger = this.projectiles.some(
-        (p) => p.owner === 0 && Math.abs(p.x - f.x) < 230,
-      );
-      if (danger && this.random() < 0.65) {
-        this.aiInput.b = true;
-        if (this.random() < 0.4)
-          this.aiInput[toward === 1 ? "left" : "right"] = true;
-      } else if (distance > 280)
-        this.aiInput[toward === 1 ? "right" : "left"] = true;
-      else if (f.cooldown === 0) {
-        this.aiInput.a = true;
-        if (distance < 170 && this.random() < 0.65)
-          this.aiInput[toward === 1 ? "right" : "left"] = true;
-      } else if (distance < 100)
-        this.aiInput[toward === 1 ? "left" : "right"] = true;
-      if (this.random() < 0.045) this.aiInput.up = true;
-    }
-    return this.aiInput;
+    this.fighters.forEach((f, i) => {
+      f.previous = { ...inputs[i] };
+    });
   }
 }

@@ -1,5 +1,7 @@
 import * as Phaser from "phaser";
 import { Match, emptyInput } from "./engine.ts";
+import { WINDUP } from "./engine.ts";
+import type { Zone } from "./debate.ts";
 import type { Input, Fighter } from "./engine.ts";
 export interface Controls {
   p1: Input;
@@ -9,6 +11,10 @@ export interface Controls {
   start: 0 | 1 | 2;
   pause: boolean;
   sound: boolean;
+  choice: number;
+  advance: boolean;
+  review: boolean;
+  defense: Zone | null;
 }
 export const controls: Controls = {
   p1: emptyInput(),
@@ -18,6 +24,10 @@ export const controls: Controls = {
   start: 0,
   pause: false,
   sound: false,
+  choice: -1,
+  advance: false,
+  review: false,
+  defense: null,
 };
 let audio: AudioContext | undefined;
 function tone(high: boolean) {
@@ -211,6 +221,22 @@ export class Arena extends Phaser.Scene {
       this.match.start("solo");
     if (this.arcade?.SYSTEM.TWO_PLAYER && this.match.phase !== "playing")
       this.match.start("versus");
+    if (controls.choice >= 0) {
+      if (this.match.humanTurn) this.match.choose(controls.choice);
+      controls.choice = -1;
+    }
+    if (controls.advance) {
+      this.match.advance();
+      controls.advance = false;
+    }
+    if (controls.review) {
+      this.match.review();
+      controls.review = false;
+    }
+    if (controls.defense) {
+      this.match.defend(controls.defense);
+      controls.defense = null;
+    }
     if (controls.pause) {
       this.match.pause();
       controls.pause = false;
@@ -250,7 +276,7 @@ export class Arena extends Phaser.Scene {
     this.worldWidth = width / this.zoom;
     this.worldHeight = height / this.zoom;
     this.originX = (this.worldWidth - 960) / 2;
-    this.originY = this.worldHeight * 0.82 - 425;
+    this.originY = this.worldHeight * 0.66 - 425;
     this.cameras.main
       .setZoom(this.zoom)
       .centerOn(this.worldWidth / 2, this.worldHeight / 2);
@@ -338,7 +364,7 @@ export class Arena extends Phaser.Scene {
       }
     }
     for (const e of this.match.effects) {
-      const alpha = e.life / 0.5,
+      const alpha = Math.max(0, Math.min(1, e.life / 0.6)),
         r = (1 - alpha) * 60 + 10,
         c = Phaser.Display.Color.HexStringToColor(e.color).color;
       g.lineStyle(e.kind === "hit" ? 3 : 1.5, c, alpha);
@@ -464,12 +490,43 @@ export class Arena extends Phaser.Scene {
     const handX =
         x +
         dir *
-          (meditating ? 15 : phase && MOVEOFFENSE(f) ? 78 : f.guard ? 47 : 36),
-      handY = meditating ? y - 55 + crouch : headY + (phase ? 30 : 52);
+          (meditating ? 15 : phase && MOVEOFFENSE(f) ? 78 : f.stance ? 47 : 36),
+      handY = f.stance
+        ? f.guardZone === "high"
+          ? headY - 15
+          : f.guardZone === "low"
+            ? y - 30
+            : headY + 35
+        : this.match.stage === "windup" &&
+            this.match.selected?.target === "high"
+          ? headY - 35 + (1 - this.match.remaining / WINDUP) * 80
+          : meditating
+            ? y - 55 + crouch
+            : headY + (phase ? 30 : 52);
     g.lineStyle(12, index ? 0x61453c : 0xa56c36, alpha);
     g.lineBetween(x + dir * 20, headY + 30, handX - dir * 12, handY);
     g.fillStyle(0xc5a081, alpha);
     g.fillCircle(handX, handY, 7);
+    if (
+      this.match.stage === "windup" &&
+      f.id === this.match.fighters[this.match.attacker].id &&
+      this.match.selected?.target === "low"
+    ) {
+      g.lineStyle(14, index ? 0x24252d : 0x8e5933, alpha);
+      g.lineBetween(x, y - 38, x + dir * 85, y - 18);
+      g.fillStyle(0xc5a081, alpha);
+      g.fillEllipse(x + dir * 85, y - 18, 23, 10);
+    }
+    if (f.stance) {
+      const guardY =
+        f.guardZone === "high"
+          ? headY
+          : f.guardZone === "middle"
+            ? y - 65
+            : y - 22;
+      g.lineStyle(f.guard ? 4 : 1, c, f.guard ? 0.8 : 0.3);
+      g.strokeEllipse(x + dir * 28, guardY, 55, 40);
+    }
     if (f.active > 0 && f.move === "aggregates") {
       for (let i = 0; i < 5; i++) {
         g.lineStyle(2, c, 0.7);
