@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { layoutFixture } from "./layoutFixtures";
 import { CABINET_WIDTH, CABINET_HEIGHT, isCabinet } from "./display";
 import { Match, emptyInput } from "./engine.ts";
 import { WINDUP } from "./engine.ts";
@@ -64,7 +65,6 @@ export interface ArenaProjection {
 export class Arena extends Phaser.Scene {
   match = new Match();
   private ink!: Phaser.GameObjects.Graphics;
-  private scenery!: Phaser.GameObjects.Graphics;
   private worldWidth = 960;
   private worldHeight = 600;
   private originX = 0;
@@ -88,7 +88,8 @@ export class Arena extends Phaser.Scene {
     super("arena");
   }
   create() {
-    this.scenery = this.add.graphics();
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).has("layout-case"))
+      this.match = layoutFixture(new URLSearchParams(window.location.search));
     this.ink = this.add.graphics();
     this.layout();
     this.scale.on("resize", this.layout, this);
@@ -252,7 +253,8 @@ export class Arena extends Phaser.Scene {
     }
     const dt = Math.min(delta / 1000, 0.04);
     if (this.match.phase === "playing") this.elapsed += dt;
-    this.match.tick(dt, this.readInput(0), this.readInput(1));
+    if (!(import.meta.env.DEV && new URLSearchParams(window.location.search).has("layout-case")))
+      this.match.tick(dt, this.readInput(0), this.readInput(1));
     this.pendingKeys.clear();
     Object.assign(controls.pending1, emptyInput());
     Object.assign(controls.pending2, emptyInput());
@@ -285,93 +287,32 @@ export class Arena extends Phaser.Scene {
     this.worldWidth = width / this.zoom;
     this.worldHeight = height / this.zoom;
     this.originX = (this.worldWidth - 960) / 2;
-    this.originY = this.worldHeight * 0.66 - 425;
-    this.cameras.main
-      .setZoom(this.zoom)
-      .centerOn(this.worldWidth / 2, this.worldHeight / 2);
-    this.ink.setPosition(this.originX, this.originY);
-    this.scenery.setPosition(this.originX, this.originY);
-    this.background();
+    this.originY = this.worldHeight * 0.79 - 425;
+    this.cameras.main.setZoom(1).setScroll(0, 0);
     this.publishMatch();
-  }
-  private background() {
-    const g = this.scenery;
-    g.clear();
-    // Graphics gradients are WebGL-only. Draw opaque Canvas-compatible sky bands.
-    const bands = 32;
-    for (let i = 0; i < bands; i++) {
-      const t = i / (bands - 1);
-      const r = Math.round(21 + (12 - 21) * t);
-      const green = Math.round(41 + (21 - 41) * t);
-      const b = Math.round(50 + (28 - 50) * t);
-      g.fillStyle((r << 16) | (green << 8) | b, 1);
-      g.fillRect(
-        -this.originX,
-        -this.originY + i * this.worldHeight / bands,
-        this.worldWidth,
-        this.worldHeight / bands + 1,
-      );
-    }
-    g.fillStyle(0x8be0c1, 0.035);
-    g.fillCircle(265, 245, 230);
-    g.fillStyle(0xffb36b, 0.035);
-    g.fillCircle(740, 245, 230);
-    g.fillStyle(0xefe0b9, 0.7);
-    g.fillCircle(478, 157, 47);
-    g.fillStyle(0x172731, 1);
-    g.fillCircle(494, 143, 46);
-    for (let i = 0; i < 62; i++) {
-      const x = (i * 167 + 41) % 960,
-        y = 80 + ((i * 97) % 225);
-      g.fillStyle(0xe0d4b5, i % 3 === 0 ? 0.4 : 0.14);
-      g.fillCircle(x, y, i % 6 === 0 ? 1.4 : 0.7);
-    }
-    // Temple silhouettes and a geometric city meet at the horizon.
-    g.fillStyle(0x213b3b, 0.8);
-    g.fillRect(48, 242, 288, 181);
-    g.fillTriangle(20, 255, 192, 159, 365, 255);
-    g.fillStyle(0x33534b, 0.6);
-    g.fillTriangle(29, 248, 192, 173, 356, 248);
-    for (const x of [74, 128, 245, 299]) {
-      g.fillStyle(0x0f262b, 1);
-      g.fillRect(x, 261, 22, 162);
-      g.fillStyle(0x34534d, 0.6);
-      g.fillRect(x, 261, 4, 162);
-      g.fillRect(x - 5, 257, 32, 8);
-    }
-    g.fillStyle(0x13282e, 1);
-    g.fillRect(154, 284, 78, 139);
-    g.fillStyle(0x5b8d75, 0.14);
-    g.fillCircle(192, 319, 29);
-    for (let i = 0; i < 7; i++) {
-      const x = 591 + i * 53,
-        h = 95 + ((i * 67) % 125);
-      g.fillStyle(i % 2 ? 0x2e3338 : 0x252e36, 1);
-      g.fillRect(x, 425 - h, 44, h);
-      g.lineStyle(1, 0xa88962, 0.2);
-      g.lineBetween(x, 425 - h, x + 44, 425 - h);
-      for (let y = 438 - h; y < 420; y += 18) {
-        g.fillStyle(0xcda271, 0.15);
-        g.fillRect(x + 10, y, 4, 6);
-        g.fillRect(x + 29, y, 4, 6);
-      }
-    }
-    g.fillStyle(0x0c191f, 1);
-    const floorBottom = this.worldHeight - this.originY;
-    g.fillRect(-this.originX, 423, this.worldWidth, floorBottom - 423);
-    g.lineStyle(2, 0xcac1a0, 0.4);
-    g.lineBetween(-this.originX, 425, 960 + this.originX, 425);
-    g.lineStyle(1, 0x4e7065, 0.25);
-    for (let x = -400 - this.originX; x < 1400 + this.originX; x += 100)
-      g.lineBetween(480 + (x - 480) * 0.5, 427, x, floorBottom);
-    for (let y = 438; y < floorBottom; y += 24)
-      g.lineBetween(-this.originX, y, 960 + this.originX, y);
   }
   private draw() {
     const g = this.ink;
     g.clear();
-    this.match.fighters.forEach((f, i) => this.fighter(g, f, i));
-    for (const p of this.match.projectiles) {
+    const reading = this.match.phase === "playing" &&
+      ["select", "answer", "continue"].includes(this.match.stage);
+    if (reading) {
+      const speaker = this.match.stage === "select" || this.match.stage === "continue" ||
+        (this.match.stage === "answer" && this.match.reviewing)
+        ? this.match.defender : this.match.attacker;
+      g.setScale(0.9).setPosition(0, 0);
+      this.fighter(g, { ...this.match.fighters[speaker], x: 46, y: 220,
+        facing: 1, guard: false, stance: false, crouch: false, active: 0,
+        hit: 0, move: null, immune: 0 }, speaker);
+      return;
+    }
+    const characterScale = 0.65;
+    const x = (value: number) => (value + this.originX) * this.zoom / characterScale;
+    const y = (value: number) => (value + this.originY) * this.zoom / characterScale;
+    g.setScale(characterScale).setPosition(0, 0);
+    this.match.fighters.forEach((f, i) => this.fighter(g, { ...f, x: x(f.x), y: y(f.y) }, i));
+    for (const projectile of this.match.projectiles) {
+      const p = { ...projectile, x: x(projectile.x), y: y(projectile.y) };
       const c = p.owner ? 0xffb66f : 0x91e0c6;
       g.fillStyle(c, 0.08);
       g.fillCircle(p.x, p.y, 30);
@@ -385,7 +326,8 @@ export class Arena extends Phaser.Scene {
         g.lineBetween(p.x - p.direction * 30, p.y, p.x, p.y);
       }
     }
-    for (const e of this.match.effects) {
+    for (const effect of this.match.effects) {
+      const e = { ...effect, x: x(effect.x), y: y(effect.y) };
       const alpha = Math.max(0, Math.min(1, e.life / 0.6)),
         r = (1 - alpha) * 60 + 10,
         c = Phaser.Display.Color.HexStringToColor(e.color).color;
@@ -411,7 +353,7 @@ export class Arena extends Phaser.Scene {
       dir = f.facing,
       c = index ? 0xffb66f : 0x91e0c6;
     g.fillStyle(0x000000, 0.28);
-    g.fillEllipse(x, 430, 92, 13);
+    g.fillEllipse(x, y + 5, 92, 13);
     const phase = f.active > 0 ? 1 : 0,
       meditating =
         f.active > 0 && (f.move === "mindful" || f.move === "premises"),
