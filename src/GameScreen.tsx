@@ -98,6 +98,7 @@ export function GameScreen({ view, sound, setSound }: { view: View; sound: boole
   const reviewing = selecting || (view.stage === "answer" && view.reviewing);
   const reading = view.phase === "playing" && ["select", "answer", "continue"].includes(view.stage);
   const speaker = reviewing || view.stage === "continue" ? view.defender : view.attacker;
+  const portrait = view.stage === "continue" ? speaker : view.actor;
   const statement = reviewing ? node.claim[view.reviewZone]
     : view.stage === "continue" ? view.answered?.text : view.selected?.text;
   const heading = view.answered?.kind === "concede" ? "Claim revised"
@@ -108,7 +109,7 @@ export function GameScreen({ view, sound, setSound }: { view: View; sound: boole
   return <>
     <Label data-layout="prototype">PROTOTYPE</Label>
     {reading && <>
-      <PortraitName style={color(speaker)} data-layout="portrait-name">{ROSTER[ids[speaker]].name}</PortraitName>
+      <PortraitName style={color(portrait)} data-layout="portrait-name">{ROSTER[ids[portrait]].name}</PortraitName>
       <Reading aria-label={view.stage === "continue" ? "Debate outcome" : selecting ? "Choose a rebuttal" : "Choose an answer"}>
         <Statement style={color(speaker)} data-layout="statement" aria-label={`${ROSTER[ids[speaker]].name} statement`}>
           <span className="caption">{ROSTER[ids[speaker]].name} · {reviewing ? ZONES[view.reviewZone].part : view.stage === "continue" ? "Reply" : "Objection"}</span>

@@ -297,13 +297,12 @@ export class Arena extends Phaser.Scene {
     const reading = this.match.phase === "playing" &&
       ["select", "answer", "continue"].includes(this.match.stage);
     if (reading) {
-      const speaker = this.match.stage === "select" || this.match.stage === "continue" ||
-        (this.match.stage === "answer" && this.match.reviewing)
-        ? this.match.defender : this.match.attacker;
+      const portrait = this.match.stage === "continue"
+        ? this.match.defender : this.match.actor;
       g.setScale(0.9).setPosition(0, 0);
-      this.fighter(g, { ...this.match.fighters[speaker], x: 46, y: 220,
+      this.fighter(g, { ...this.match.fighters[portrait], x: 46, y: 220,
         facing: 1, guard: false, stance: false, crouch: false, active: 0,
-        hit: 0, move: null, immune: 0 }, speaker);
+        hit: 0, move: null, immune: 0 }, portrait);
       return;
     }
     const characterScale = 0.65;
