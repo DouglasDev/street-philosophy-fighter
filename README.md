@@ -19,7 +19,7 @@ The cabinet loads the game directly and uses its input plugin. The laptop previe
 
 ## Debate loop
 
-The topic stays at the top: **Does ambition help us flourish, or make us suffer?** Each claim has a high conclusion, middle inference, and low premise. Inspect all three before choosing among three specific objections. Their strength is authored in advance and revealed through the outcome and explanation, rather than a score beside the choice.
+The topic stays at the top: **Does ambition help us flourish, or make us suffer?** Each exchange first shows a complete argument with its supporting reason. B inspects its parts and then returns to the complete argument. Each claim has a high conclusion, middle inference, and low premise. Inspect all three before choosing among three specific objections. Their strength is authored in advance and revealed through the outcome and explanation, rather than a score beside the choice.
 
 1. Choose an objection. Its target determines an overhead strike, argument thrust, or low kick. Stronger objections deal more damage.
 2. The defender has a 1.6-second attack windup to change stance and press B. A correct-zone parry in the final 0.35 seconds prevents damage. An early correct-zone guard reduces damage while held; a wrong-zone guard does not help.
@@ -46,7 +46,7 @@ Content lives in `src/debate.ts`, debate/combat rules in `src/engine.ts`, render
 
 ## Cabinet layout verification
 
-In development, `?layout-check=1` renders 206 fixed-size cases covering every claim part, objection, answer, concession/defense/evasion outcome, start/pause/result menu, attack zone, parry prompt, and impact result. Each panel is 336 × 262. Browser geometry checks verify that regions stay inside their panel, text fits its buttons, and unrelated regions do not overlap. These test views are excluded from production.
+In development, `?layout-check=1` renders 214 fixed-size cases covering every claim part, objection, answer, concession/defense/evasion outcome, start/pause/result menu, attack zone, parry prompt, and impact result. Each panel is 336 × 262. Browser geometry checks verify that regions stay inside their panel, text fits its buttons, and unrelated regions do not overlap. These test views are excluded from production.
 
 Use `?layout-case=select`, `answer`, `continue`, `windup`, `impact`, `ready`, `paused`, or `finished` to inspect a frozen real-match state with Phaser visuals in the laptop preview. Optional `node`, `choice`, `zone`, `answer`, and `defense` parameters select specific content.
 

@@ -17,7 +17,10 @@ export function layoutFixture(params: URLSearchParams): Match {
     match.winner = stage === "draw" ? "draw" : params.get("winner") === "rand" ? "rand" : "buddha";
     return match;
   }
-  if (stage === "select") return match;
+  if (stage === "select") {
+    match.reviewing = params.has("zone");
+    return match;
+  }
   match.choose(Number(params.get("choice") ?? 0));
   if (stage === "windup" || stage === "paused") {
     match.remaining = params.has("parry") ? 0.2 : 0.9;

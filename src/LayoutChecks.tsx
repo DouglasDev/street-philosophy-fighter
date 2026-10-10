@@ -7,6 +7,7 @@ import { CABINET_WIDTH, CABINET_HEIGHT } from "./display";
 export function LayoutChecks() {
   const cases: string[] = ["ready", "paused", "finished", "draw", "finished&winner=rand"];
   for (const node of Object.values(DEBATE)) {
+    cases.push(`select&node=${node.id}`);
     for (const zone of ["high", "middle", "low"]) cases.push(`select&node=${node.id}&zone=${zone}`);
     node.choices.forEach((_, choice) => {
       cases.push(`answer&node=${node.id}&choice=${choice}`);

@@ -200,7 +200,7 @@ export class Match {
     });
     this.say(
       this.defender,
-      this.node.claim.high,
+      this.node.argument,
       this.defender ? "identity" : "cause",
     );
   }
@@ -210,11 +210,9 @@ export class Match {
       (this.stage === "select" || this.stage === "answer")
     ) {
       const zones: Zone[] = ["high", "middle", "low"];
-      if (this.stage === "answer") {
-        this.reviewSteps = (this.reviewSteps + 1) % 4;
-        this.reviewing = this.reviewSteps !== 0;
-        if (this.reviewing) this.reviewZone = zones[this.reviewSteps - 1];
-      } else this.reviewZone = zones[(zones.indexOf(this.reviewZone) + 1) % 3];
+      this.reviewSteps = (this.reviewSteps + 1) % 4;
+      this.reviewing = this.reviewSteps !== 0;
+      if (this.reviewing) this.reviewZone = zones[this.reviewSteps - 1];
     }
   }
   choose(index: number) {

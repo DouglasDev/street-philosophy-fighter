@@ -41,6 +41,25 @@ test("all authored branches exist, switch claimant, and offer three replies", ()
   }
   assert.equal(reachable.size, Object.keys(DEBATE).length);
 });
+test("exchanges announce the full argument and inspection returns to it", () => {
+  const m = game();
+  assert.equal(m.dialogue.history.at(-1)?.text, m.node.argument);
+  assert.equal(m.reviewing, false);
+  for (const zone of ["high", "middle", "low"]) {
+    m.review();
+    assert.equal(m.reviewing, true);
+    assert.equal(m.reviewZone, zone);
+  }
+  m.review();
+  assert.equal(m.reviewing, false);
+  m.choose(0);
+  parry(m);
+  m.choose(0);
+  m.advance();
+  assert.equal(m.stage, "select");
+  assert.equal(m.dialogue.history.at(-1)?.text, m.node.argument);
+  assert.equal(m.reviewing, false);
+});
 test("reading has no timer; navigation is edge-triggered and A commits the chosen challenge", () => {
   const m = game();
   for (let i = 0; i < 1000; i++) m.tick(0.04, emptyInput());

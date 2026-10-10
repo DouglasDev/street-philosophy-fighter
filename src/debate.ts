@@ -29,6 +29,7 @@ export interface Rebuttal {
 export interface DebateNode {
   id: string;
   claimant: FighterId;
+  argument: string;
   claim: Record<Zone, string>;
   choices: Rebuttal[];
 }
@@ -83,6 +84,7 @@ function response(
 export const DEBATE: Record<string, DebateNode> = {
   purpose: {
     id: "purpose",
+    argument: "We can revise our goals through reason. Ambition can guide our lives without enslaving us.",
     claimant: "rand",
     claim: {
       low: "We can choose and revise our purposes.",
@@ -141,6 +143,7 @@ export const DEBATE: Record<string, DebateNode> = {
   },
   attachment: {
     id: "attachment",
+    argument: "If peace depends on success, failure threatens it. Ambition with clinging can bring suffering.",
     claimant: "buddha",
     claim: {
       low: "A person may make their peace depend on achieving a goal.",
@@ -199,6 +202,7 @@ export const DEBATE: Record<string, DebateNode> = {
   },
   revision: {
     id: "revision",
+    argument: "Examining goals can loosen attachment. Rational revision can make ambition less enslaving.",
     claimant: "rand",
     claim: {
       low: "People can examine their goals and change mistaken judgments.",
@@ -256,6 +260,7 @@ export const DEBATE: Record<string, DebateNode> = {
   },
   habit: {
     id: "habit",
+    argument: "Craving can outlast insight. Practicing attention can help us act without obeying every impulse.",
     claimant: "buddha",
     claim: {
       low: "Habits of craving can persist after we recognize them.",
@@ -315,6 +320,7 @@ export const DEBATE: Record<string, DebateNode> = {
   },
   agency: {
     id: "agency",
+    argument: "Choosing a purpose organizes our actions. Ambition can express our agency rather than destroy it.",
     claimant: "rand",
     claim: {
       low: "Acting requires choosing among possible courses of action.",
@@ -371,6 +377,7 @@ export const DEBATE: Record<string, DebateNode> = {
   },
   practice: {
     id: "practice",
+    argument: "We can work toward goals while observing attachment. Purposeful effort need not mean clinging.",
     claimant: "buddha",
     claim: {
       low: "A person can pursue a goal while observing attachment to its outcome.",
@@ -428,6 +435,7 @@ export const DEBATE: Record<string, DebateNode> = {
   },
   value: {
     id: "value",
+    argument: "Difficult work can help us flourish. A risk of disappointment need not make ambition worthless.",
     claimant: "rand",
     claim: {
       low: "Some difficult projects contribute to a person’s flourishing.",
@@ -485,6 +493,7 @@ export const DEBATE: Record<string, DebateNode> = {
   },
   ends: {
     id: "ends",
+    argument: "Success and failure change. Pursue what matters without making lasting peace depend on success.",
     claimant: "buddha",
     claim: {
       low: "Success, failure, and the feelings they bring can change.",

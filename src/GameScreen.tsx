@@ -25,9 +25,9 @@ const Choices = styled.div`
   button {
     min-height: 0; display: grid; grid-template-columns: 19px 1fr;
     align-items: center; gap: 4px; text-align: left;
-    padding: 4px 5px; border: 1px solid #476657; border-radius: 5px;
+    padding: 3px 5px; border: 1px solid #476657; border-radius: 5px;
     background: #1b312d; color: #eee3c9;
-    font: 11.5px/1.2 Georgia, serif;
+    font: 11px/1.2 Georgia, serif;
   }
   button[aria-pressed="true"] { background: #314b3c; border-color: #e0c78e; box-shadow: inset 2px 0 #e0c78e; }
   button:disabled { opacity: 0.65; }
@@ -95,11 +95,12 @@ const color = (index: number) => ({ "--fighter-color": ROSTER[ids[index]].color 
 export function GameScreen({ view, sound, setSound }: { view: View; sound: boolean; setSound: (value: boolean) => void }) {
   const node = DEBATE[view.nodeId];
   const selecting = view.stage === "select";
-  const reviewing = selecting || (view.stage === "answer" && view.reviewing);
+  const reviewing = (selecting || view.stage === "answer") && view.reviewing;
   const reading = view.phase === "playing" && ["select", "answer", "continue"].includes(view.stage);
-  const speaker = reviewing || view.stage === "continue" ? view.defender : view.attacker;
+  const speaker = selecting || reviewing || view.stage === "continue" ? view.defender : view.attacker;
   const portrait = view.stage === "continue" ? speaker : view.actor;
   const statement = reviewing ? node.claim[view.reviewZone]
+    : selecting ? node.argument
     : view.stage === "continue" ? view.answered?.text : view.selected?.text;
   const heading = view.answered?.kind === "concede" ? "Claim revised"
     : view.answered?.kind === "evade" ? "Guard weakened" : "Objection answered";
@@ -111,8 +112,8 @@ export function GameScreen({ view, sound, setSound }: { view: View; sound: boole
     {reading && <>
       <PortraitName style={color(portrait)} data-layout="portrait-name">{ROSTER[ids[portrait]].name}</PortraitName>
       <Reading aria-label={view.stage === "continue" ? "Debate outcome" : selecting ? "Choose a rebuttal" : "Choose an answer"}>
-        <Statement style={color(speaker)} data-layout="statement" aria-label={`${ROSTER[ids[speaker]].name} statement`}>
-          <span className="caption">{ROSTER[ids[speaker]].name} · {reviewing ? ZONES[view.reviewZone].part : view.stage === "continue" ? "Reply" : "Objection"}</span>
+        <Statement style={{ ...color(speaker), ...(selecting && !reviewing ? { fontSize: 11, padding: "4px 8px" } : {}) }} data-layout="statement" aria-label={`${ROSTER[ids[speaker]].name} statement`}>
+          <span className="caption">{ROSTER[ids[speaker]].name} · {reviewing ? ZONES[view.reviewZone].part : selecting ? "Argument" : view.stage === "continue" ? "Reply" : "Objection"}</span>
           “{statement}”
         </Statement>
         {view.stage === "continue" ? <Outcome data-layout="outcome">
